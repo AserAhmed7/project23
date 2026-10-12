@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>جيم فلاش | أخبار الجيمنج</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020403;
+  --panel: #0a0f0b;
+  --line: #16301a;
+  --text: #e8efe6;
+  --dim: #7d8f7a;
+  --neon: #39ff14;
+}
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Cairo', system-ui, sans-serif; line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+
+header { border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; }
+.logo { font-weight: 900; font-size: 1.7rem; color: var(--neon); text-shadow: 0 0 14px rgba(57,255,20,.7); }
+button { font: inherit; font-weight: 700; background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 6px 16px; border-radius: 3px; cursor: pointer; }
+button:hover, button:focus-visible { background: var(--neon); color: #000; outline: none; }
+
+.feature { display: block; position: relative; min-height: 380px; margin-top: 22px; border: 1px solid var(--line); background: var(--panel) center/cover no-repeat; overflow: hidden; }
+.feature::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(2,4,3,.97) 8%, rgba(2,4,3,.35) 70%); }
+.feature .inner { position: absolute; inset: auto 0 0 0; padding: 26px; }
+.feature h1 { font-size: clamp(1.5rem, 4.5vw, 2.7rem); font-weight: 900; line-height: 1.25; max-width: 24ch; direction: ltr; text-align: left; border-right: 5px solid var(--neon); padding-right: 14px; text-shadow: 0 0 22px rgba(57,255,20,.35); }
+.feature p { color: var(--dim); margin-top: 8px; max-width: 70ch; direction: ltr; text-align: left; }
+
+.meta { color: var(--dim); font-size: .85rem; margin-top: 6px; }
+.meta b { color: var(--neon); font-weight: 700; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 22px 0 36px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; display: flex; flex-direction: column; }
+.card:hover, .card:focus-visible { border-color: var(--neon); outline: none; }
+.card .img { aspect-ratio: 16/9; background: #0d150e center/cover no-repeat; }
+.card .body { padding: 12px 14px 14px; }
+.card h2 { font-size: 1.02rem; font-weight: 700; line-height: 1.4; direction: ltr; text-align: left; }
+
+.empty { margin: 60px 0; text-align: center; color: var(--dim); }
+
+footer { border-top: 1px solid var(--line); padding: 18px 0 28px; color: var(--dim); }
+footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+#visits { color: var(--neon); font-weight: 900; }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .15s; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="logo">جيم فلاش</span>
+    <button id="reload" type="button">هات أخبار تانية</button>
+  </div>
+</header>
+
+<main class="wrap" id="main" aria-live="polite"></main>
+
+<footer>
+  <div class="wrap">
+    <span>الأخبار بتتحدث أوتوماتيك، والعناوين بتودّيك للمصدر الأصلي.</span>
+    <span>عدد الزوار: <span id="visits">…</span></span>
+  </div>
+</footer>
+
+<script>
+const main = document.getElementById('main');
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+}
+
+function ago(ts) {
+  const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
+  if (m < 60) return `من ${m} دقيقة`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `من ${h} ساعة`;
+  return `من ${Math.round(h / 24)} يوم`;
+}
+
+function meta(a) {
+  const d = el('div', 'meta');
+  const b = el('b', '', a.source);
+  d.append(b, ' · ' + ago(a.published));
+  return d;
+}
+
+function render(list) {
+  main.replaceChildren();
+  if (!list.length) {
+    main.append(el('p', 'empty', 'لسه مفيش أخبار. السيرفر بيسحبها دلوقتي، حدّث الصفحة بعد دقيقة.'));
+    return;
+  }
+  const [top, ...rest] = list;
+
+  const f = el('a', 'feature');
+  f.href = top.link; f.target = '_blank'; f.rel = 'noopener';
+  if (top.image) f.style.backgroundImage = `url("${top.image.replace(/"/g, '%22')}")`;
+  const inner = el('div', 'inner');
+  inner.append(el('h1', '', top.title));
+  if (top.summary) inner.append(el('p', '', top.summary));
+  inner.append(meta(top));
+  f.append(inner);
+  main.append(f);
+
+  const grid = el('div', 'grid');
+  for (const a of rest) {
+    const c = el('a', 'card');
+    c.href = a.link; c.target = '_blank'; c.rel = 'noopener';
+    const img = el('div', 'img');
+    if (a.image) img.style.backgroundImage = `url("${a.image.replace(/"/g, '%22')}")`;
+    const body = el('div', 'body');
+    body.append(el('h2', '', a.title), meta(a));
+    c.append(img, body);
+    grid.append(c);
+  }
+  main.append(grid);
+}
+
+async function loadNews() {
+  try {
+    render(await (await fetch('/api/news')).json());
+  } catch {
+    main.replaceChildren(el('p', 'empty', 'مقدرناش نحمّل الأخبار. اتأكد إن السيرفر شغال وجرب تاني.'));
+  }
+}
+
+async function countVisit() {
+  try {
+    const first = !sessionStorage.getItem('counted');
+    const r = first
+      ? await fetch('/api/visit', { method: 'POST' })
+      : await fetch('/api/visits');
+    const data = await r.json();
+    document.getElementById('visits').textContent = data.visits.toLocaleString('ar-EG');
+    sessionStorage.setItem('counted', '1');
+  } catch {}
+}
+
+document.getElementById('reload').addEventListener('click', loadNews);
+loadNews();
+countVisit();
+setInterval(loadNews, 5 * 60 * 1000); // تشكيلة جديدة كل 5 دقايق وهو فاتح الصفحة
+</script>
+</body>
+</html>
